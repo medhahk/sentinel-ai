@@ -7,10 +7,10 @@ import {
   Bell,
   User,
   Sparkles,
-  Bot,
-  Terminal,
-  LogOut,
   ChevronDown,
+  Key,
+  CreditCard,
+  LogOut,
   Lock
 } from 'lucide-react';
 
@@ -20,8 +20,11 @@ export const Navbar = () => {
     navigateTo,
     setIsCommandPaletteOpen,
     setIsUploadModalOpen,
+    setIsJwtModalOpen,
+    setIsPaymentModalOpen,
     userName,
     userRole,
+    userPlan,
     vulnerabilities
   } = useApp();
 
@@ -31,7 +34,7 @@ export const Navbar = () => {
   const criticalCount = vulnerabilities.filter(v => v.severity === 'Critical').length;
 
   if (currentRoute === 'landing' || currentRoute === 'login' || currentRoute === 'register') {
-    return null; // Public pages use custom header or landing header
+    return null;
   }
 
   return (
@@ -57,20 +60,27 @@ export const Navbar = () => {
           </div>
         </button>
 
-        {/* Live Threat Radar Pulse Badge */}
-        <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full bg-cyan-950/40 border border-cyan-800/40 text-xs text-cyan-300 font-mono">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-          </span>
-          <span>RADAR ACTIVE</span>
-          <span className="text-slate-500">|</span>
-          <span className="text-red-400 font-bold">{criticalCount} Critical Threats</span>
-        </div>
+        {/* JWT Session Badge */}
+        <button
+          onClick={() => setIsJwtModalOpen(true)}
+          className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/40 text-[11px] text-cyan-300 font-mono hover:bg-cyan-900/60 transition-colors"
+        >
+          <Key className="w-3 h-3 text-cyan-400" />
+          <span>JWT ACTIVE</span>
+        </button>
+
+        {/* Plan Upgrade Badge */}
+        <button
+          onClick={() => setIsPaymentModalOpen(true)}
+          className="hidden lg:flex items-center space-x-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-indigo-900/60 to-purple-900/60 border border-purple-500/40 text-[11px] text-purple-300 font-mono font-bold hover:scale-105 transition-all"
+        >
+          <CreditCard className="w-3 h-3 text-purple-400" />
+          <span>{userPlan} PLAN</span>
+        </button>
       </div>
 
-      {/* Global Search / Command Palette Bar */}
-      <div className="hidden md:flex flex-1 max-w-md mx-6">
+      {/* Global Search Bar */}
+      <div className="hidden md:flex flex-1 max-w-md mx-4">
         <button
           onClick={() => setIsCommandPaletteOpen(true)}
           className="w-full flex items-center justify-between px-3.5 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-cyan-500/40 text-slate-400 text-xs transition-colors focus:outline-none group"
@@ -85,63 +95,29 @@ export const Navbar = () => {
         </button>
       </div>
 
-      {/* Actions & User Menu */}
+      {/* Actions */}
       <div className="flex items-center space-x-3">
-        {/* AI Assistant Quick Launcher */}
         <button
           onClick={() => navigateTo('ai-assistant')}
-          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600/30 to-cyan-600/30 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 text-xs font-medium transition-all shadow-sm focus:outline-none"
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-indigo-600/30 to-cyan-600/30 border border-cyan-500/30 text-cyan-300 text-xs font-medium transition-all"
         >
           <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
           <span className="hidden sm:inline">AI Copilot</span>
         </button>
 
-        {/* Upload Scan CTA Button */}
         <button
           onClick={() => setIsUploadModalOpen(true)}
-          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs transition-all shadow-lg shadow-cyan-500/25 focus:outline-none"
+          className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/25 transition-all"
         >
           <UploadCloud className="w-4 h-4" />
           <span className="hidden sm:inline">Upload Scan</span>
         </button>
 
-        {/* Notification Bell */}
-        <div className="relative">
-          <button
-            onClick={() => setIsNotifOpen(prev => !prev)}
-            className="p-2 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 text-slate-300 relative focus:outline-none"
-          >
-            <Bell className="w-4 h-4" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-cyan-400"></span>
-          </button>
-
-          {isNotifOpen && (
-            <div className="absolute right-0 mt-2 w-80 rounded-xl glass-panel p-4 z-50 border border-cyan-900/40 shadow-2xl">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <span className="font-semibold text-xs text-slate-200">Security Notifications</span>
-                <span className="text-[10px] font-mono text-cyan-400">3 NEW</span>
-              </div>
-              <div className="space-y-2.5 mt-3">
-                <div className="p-2 rounded-lg bg-slate-900/60 border border-red-900/30 text-xs">
-                  <p className="font-semibold text-red-400">Critical Finding Detected</p>
-                  <p className="text-slate-400 text-[11px]">SQLi in api.internal-auth.prod (CVE-2024-21887)</p>
-                  <span className="text-[9px] font-mono text-slate-500">10 mins ago</span>
-                </div>
-                <div className="p-2 rounded-lg bg-slate-900/60 border border-cyan-900/30 text-xs">
-                  <p className="font-semibold text-cyan-400">Threat Intel Sync Complete</p>
-                  <p className="text-slate-400 text-[11px]">EPSS Database updated with 142 new zero-day metrics</p>
-                  <span className="text-[9px] font-mono text-slate-500">1 hour ago</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* User Profile */}
+        {/* User Menu */}
         <div className="relative">
           <button
             onClick={() => setIsUserMenuOpen(prev => !prev)}
-            className="flex items-center space-x-2 p-1.5 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-slate-700 text-xs text-slate-200 focus:outline-none"
+            className="flex items-center space-x-2 p-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-200 focus:outline-none"
           >
             <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-slate-950 text-[11px]">
               AM
@@ -151,29 +127,29 @@ export const Navbar = () => {
           </button>
 
           {isUserMenuOpen && (
-            <div className="absolute right-0 mt-2 w-48 rounded-xl glass-panel p-2 z-50 border border-slate-800 shadow-2xl space-y-1">
-              <div className="px-3 py-2 border-b border-slate-800/80 text-xs">
+            <div className="absolute right-0 mt-2 w-52 rounded-xl glass-panel p-2 z-50 border border-slate-800 shadow-2xl space-y-1 text-xs">
+              <div className="px-3 py-2 border-b border-slate-800/80">
                 <p className="font-bold text-slate-200">{userName}</p>
-                <p className="text-[10px] text-cyan-400 font-mono">{userRole}</p>
+                <p className="text-[10px] text-cyan-400 font-mono">{userRole} • {userPlan}</p>
               </div>
               <button
-                onClick={() => { setIsUserMenuOpen(false); navigateTo('settings'); }}
-                className="w-full flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 text-left"
+                onClick={() => { setIsUserMenuOpen(false); setIsJwtModalOpen(true); }}
+                className="w-full flex items-center space-x-2 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 text-left"
               >
-                <User className="w-3.5 h-3.5 text-slate-400" />
-                <span>Account Settings</span>
+                <Key className="w-3.5 h-3.5 text-cyan-400" />
+                <span>JWT Session Claims</span>
               </button>
               <button
-                onClick={() => { setIsUserMenuOpen(false); navigateTo('admin'); }}
-                className="w-full flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs text-slate-300 hover:bg-slate-800 text-left"
+                onClick={() => { setIsUserMenuOpen(false); setIsPaymentModalOpen(true); }}
+                className="w-full flex items-center space-x-2 px-3 py-1.5 rounded-lg text-slate-300 hover:bg-slate-800 text-left"
               >
-                <Lock className="w-3.5 h-3.5 text-slate-400" />
-                <span>Admin Console</span>
+                <CreditCard className="w-3.5 h-3.5 text-purple-400" />
+                <span>Billing & Subscription</span>
               </button>
               <div className="border-t border-slate-800 my-1"></div>
               <button
                 onClick={() => { setIsUserMenuOpen(false); navigateTo('landing'); }}
-                className="w-full flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs text-red-400 hover:bg-red-950/40 text-left"
+                className="w-full flex items-center space-x-2 px-3 py-1.5 rounded-lg text-red-400 hover:bg-red-950/40 text-left"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Sign Out</span>

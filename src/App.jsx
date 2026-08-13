@@ -6,6 +6,8 @@ import { Footer } from './components/layout/Footer';
 import { CommandPalette } from './components/layout/CommandPalette';
 import { Toast } from './components/layout/Toast';
 import { ScanUploadModal } from './components/modals/ScanUploadModal';
+import { JwtSessionModal } from './components/modals/JwtSessionModal';
+import { PaymentModal } from './components/modals/PaymentModal';
 
 // Pages
 import { LandingPage } from './pages/LandingPage';
@@ -28,7 +30,7 @@ import { AboutPage } from './pages/AboutPage';
 import { AdminPage } from './pages/AdminPage';
 
 const MainLayout = () => {
-  const { currentRoute } = useApp();
+  const { currentRoute, isJwtModalOpen, setIsJwtModalOpen, isPaymentModalOpen, setIsPaymentModalOpen } = useApp();
 
   const renderPage = () => {
     switch (currentRoute) {
@@ -89,6 +91,8 @@ const MainLayout = () => {
       <Footer />
       <CommandPalette />
       <ScanUploadModal />
+      <JwtSessionModal isOpen={isJwtModalOpen} onClose={() => setIsJwtModalOpen(false)} />
+      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
       <Toast />
     </div>
   );

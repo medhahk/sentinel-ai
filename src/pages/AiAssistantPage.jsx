@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Bot, Send, Sparkles, User, Database, RefreshCw, Copy, Check, Terminal } from 'lucide-react';
+import { Bot, Send, Sparkles, User, Database, Download, Trash2, Code2, Terminal, CheckCircle2 } from 'lucide-react';
 
 export const AiAssistantPage = () => {
-  const { aiChat, sendAiMessage, assets, vulnerabilities, scans } = useApp();
+  const { aiChat, setAiChat, sendAiMessage, vulnerabilities, scans, addToast } = useApp();
   const [inputText, setInputText] = useState('');
   const [selectedContext, setSelectedContext] = useState('ALL_SCANS');
+  const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef(null);
 
   useEffect(() => {
@@ -15,21 +16,44 @@ export const AiAssistantPage = () => {
   const handleSend = (e) => {
     e.preventDefault();
     if (!inputText.trim()) return;
+    setIsTyping(true);
     sendAiMessage(inputText);
     setInputText('');
+    setTimeout(() => setIsTyping(false), 1200);
   };
 
-  const presetQuestions = [
-    'Explain CVE-2024-21887 (SQL Injection) and business risk',
-    'Why is SQL Injection dangerous for backend APIs?',
-    'How do I fix XSS vulnerabilities in React & Node?',
-    'Generate executive summary for latest Nmap scan',
-    'Prioritize open vulnerabilities by business criticality'
-  ];
+  const handleQuickPrompt = (promptText) => {
+    setIsTyping(true);
+    sendAiMessage(promptText);
+    setTimeout(() => setIsTyping(false), 1200);
+  };
+
+  const handleClearChat = () => {
+    setAiChat([
+      {
+        id: 1,
+        sender: 'assistant',
+        text: 'Chat history cleared. SentinelAI RAG Copilot is ready for your security queries.',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+    addToast('Chat history cleared', 'info');
+  };
+
+  const handleDownloadTranscript = () => {
+    const transcript = aiChat.map(m => `[${m.timestamp}] ${m.sender.toUpperCase()}: ${m.text}\n`).join('\n---\n\n');
+    const blob = new Blob([transcript], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sentinel_ai_transcript_${Date.now()}.md`;
+    a.click();
+    addToast('Downloaded chat transcript markdown file!', 'success');
+  };
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-4 animate-fadeIn">
-      {/* Top Header */}
+    <div className="h-[calc(100vh-6.5rem)] flex flex-col space-y-4 animate-fadeIn">
+      {/* Top Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl glass-panel">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 p-0.5 shadow-lg shadow-cyan-500/20">
@@ -48,33 +72,62 @@ export const AiAssistantPage = () => {
           </div>
         </div>
 
-        {/* RAG Context Selector */}
         <div className="flex items-center space-x-2">
-          <Database className="w-4 h-4 text-cyan-400" />
-          <select
-            value={selectedContext}
-            onChange={e => setSelectedContext(e.target.value)}
-            className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+          {/* RAG Context Selector */}
+          <div className="flex items-center space-x-2">
+            <Database className="w-4 h-4 text-cyan-400" />
+            <select
+              value={selectedContext}
+              onChange={e => setSelectedContext(e.target.value)}
+              className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+            >
+              <option value="ALL_SCANS">Context: All Active Scans ({scans.length})</option>
+              <option value="CRITICAL_ONLY">Context: Critical Findings ({vulnerabilities.filter(v => v.severity==='Critical').length})</option>
+              <option value="GLOBAL_KB">Context: Global Security Knowledge Base</option>
+            </select>
+          </div>
+
+          <button
+            onClick={handleDownloadTranscript}
+            title="Download Transcript"
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-cyan-400 text-slate-300"
           >
-            <option value="ALL_SCANS">RAG Context: All Scans ({scans.length})</option>
-            <option value="CRITICAL_ONLY">Context: Critical Findings ({vulnerabilities.filter(v => v.severity==='Critical').length})</option>
-            <option value="GLOBAL_KB">Global Security Knowledge Base</option>
-          </select>
+            <Download className="w-4 h-4 text-cyan-400" />
+          </button>
+          <button
+            onClick={handleClearChat}
+            title="Clear Chat"
+            className="p-2 rounded-lg bg-slate-900 border border-slate-800 hover:border-red-400 text-slate-300"
+          >
+            <Trash2 className="w-4 h-4 text-red-400" />
+          </button>
         </div>
       </div>
 
-      {/* Preset Quick Prompts Chips */}
+      {/* Suggested Quick Prompt Chips */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-1 text-xs">
-        <span className="text-[10px] font-mono text-slate-500 shrink-0 uppercase">SUGGESTED PROMPTS:</span>
-        {presetQuestions.map((q, idx) => (
-          <button
-            key={idx}
-            onClick={() => sendAiMessage(q)}
-            className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-slate-300 shrink-0 transition-colors"
-          >
-            {q}
-          </button>
-        ))}
+        <span className="text-[10px] font-mono text-slate-500 shrink-0 uppercase">QUICK ACTIONS:</span>
+        <button
+          onClick={() => handleQuickPrompt("Explain CVE-2024-21887 (SQL Injection) and generate a Python PoC script")}
+          className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/40 text-slate-300 shrink-0 flex items-center space-x-1"
+        >
+          <Terminal className="w-3 h-3 text-cyan-400" />
+          <span>Python PoC Exploit Script</span>
+        </button>
+        <button
+          onClick={() => handleQuickPrompt("Generate an Ansible Hardening Playbook for SQL Injection remediation")}
+          className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-emerald-500/40 text-slate-300 shrink-0 flex items-center space-x-1"
+        >
+          <Code2 className="w-3 h-3 text-emerald-400" />
+          <span>Ansible Fix Playbook</span>
+        </button>
+        <button
+          onClick={() => handleQuickPrompt("Generate Executive Summary for latest Nmap scan")}
+          className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-purple-500/40 text-slate-300 shrink-0 flex items-center space-x-1"
+        >
+          <Sparkles className="w-3 h-3 text-purple-400" />
+          <span>Executive Synthesis Report</span>
+        </button>
       </div>
 
       {/* Chat Messages Window */}
@@ -109,10 +162,18 @@ export const AiAssistantPage = () => {
             </div>
           </div>
         ))}
+
+        {isTyping && (
+          <div className="flex items-center space-x-2 text-xs text-cyan-400 font-mono">
+            <Bot className="w-4 h-4 animate-spin" />
+            <span className="animate-pulse">SentinelAI RAG Neural Engine generating response...</span>
+          </div>
+        )}
+
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input Bar */}
+      {/* Input Form */}
       <form onSubmit={handleSend} className="glass-panel p-2 rounded-2xl flex items-center space-x-2">
         <input
           type="text"
@@ -123,9 +184,9 @@ export const AiAssistantPage = () => {
         />
         <button
           type="submit"
-          className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-cyan-500/25 flex items-center space-x-1.5 transition-all"
+          className="px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-cyan-500/25 flex items-center space-x-1.5"
         >
-          <span>Send</span>
+          <span>Send Query</span>
           <Send className="w-3.5 h-3.5" />
         </button>
       </form>
